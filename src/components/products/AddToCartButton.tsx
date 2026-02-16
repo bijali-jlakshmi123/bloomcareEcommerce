@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useCart } from "@/components/providers/CartProvider";
 
 export function AddToCartButton({
   productId,
@@ -15,6 +16,7 @@ export function AddToCartButton({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { refreshCart } = useCart();
   const [loading, setLoading] = useState(false);
 
   async function handleAddToCart() {
@@ -22,6 +24,12 @@ export function AddToCartButton({
       router.push("/login?callbackUrl=/cart");
       return;
     }
+
+    if (session?.user?.role === "ADMIN") {
+      alert("Admins cannot purchase items.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/cart", {
@@ -30,6 +38,7 @@ export function AddToCartButton({
         body: JSON.stringify({ productId, quantity: 1 }),
       });
       if (res.ok) {
+        await refreshCart();
         router.refresh();
       }
     } finally {

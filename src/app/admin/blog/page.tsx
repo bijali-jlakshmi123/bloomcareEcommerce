@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/db";
 import { Button } from "@/components/ui/Button";
 import { Plus } from "lucide-react";
+import { DeleteButton } from "./DeleteButton";
 
 export default async function AdminBlogPage() {
   const posts = await prisma.blogPost.findMany({
@@ -32,25 +33,31 @@ export default async function AdminBlogPage() {
           </thead>
           <tbody>
             {posts.map((post) => (
-              <tr key={post.id} className="border-b border-gray-100 dark:border-gray-800">
+              <tr
+                key={post.id}
+                className="border-b border-gray-100 dark:border-gray-800"
+              >
                 <td className="p-4 font-medium">{post.title}</td>
                 <td className="p-4">{post.category}</td>
                 <td className="p-4">
                   <span
                     className={`px-2 py-1 rounded-full text-sm ${
-                      post.published ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"
+                      post.published
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-gray-100 text-gray-600"
                     }`}
                   >
                     {post.published ? "Published" : "Draft"}
                   </span>
                 </td>
-                <td className="p-4">
+                <td className="p-4 flex items-center gap-3">
                   <Link
                     href={`/admin/blog/${post.id}`}
                     className="text-rose-500 font-medium hover:underline"
                   >
                     Edit
                   </Link>
+                  <DeleteButton id={post.id} />
                 </td>
               </tr>
             ))}

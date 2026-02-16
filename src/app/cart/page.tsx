@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useCart } from "@/components/providers/CartProvider";
 
 interface CartItem {
   id: string;
@@ -23,6 +24,7 @@ interface CartItem {
 export default function CartPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { refreshCart } = useCart();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,21 +34,38 @@ export default function CartPage() {
       return;
     }
     if (status === "authenticated") {
+      if (session?.user?.role === "ADMIN") {
+        router.push("/admin");
+        return;
+      }
       fetch("/api/cart")
         .then((res) => res.json())
         .then((data) => setItems(data.items || []))
         .finally(() => setLoading(false));
     }
-  }, [status, router]);
+  }, [status, router, session]);
+
+  async function updateQuantity(productId: string, quantity: number) {
+    if (quantity < 1) return;
+    setItems((prev) =>
+      prev.map((i) => (i.product.id === productId ? { ...i, quantity } : i)),
+    );
+    await fetch("/api/cart", {
+      method: "PUT",
+      body: JSON.stringify({ productId, quantity }),
+    });
+    refreshCart();
+  }
 
   async function removeItem(productId: string) {
     await fetch(`/api/cart?productId=${productId}`, { method: "DELETE" });
     setItems((prev) => prev.filter((i) => i.product.id !== productId));
+    refreshCart();
   }
 
   const total = items.reduce(
     (sum, i) => sum + Number(i.product.price) * i.quantity,
-    0
+    0,
   );
 
   if (status === "loading" || loading) {
@@ -97,13 +116,40 @@ export default function CartPage() {
                 >
                   {item.product.name}
                 </Link>
-                <p className="text-rose-500 font-bold mt-1">
-                  ₹{Number(item.product.price).toLocaleString()} × {item.quantity}
-                </p>
+                <div className="flex flex-col gap-2">
+                  <p className="text-rose-500 font-bold mt-1">
+                    ₹{Number(item.product.price).toLocaleString()}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.product.id, item.quantity - 1)
+                      }
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 flex items-center justify-center font-bold"
+                      disabled={item.quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <span className="w-8 text-center font-medium">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.product.id, item.quantity + 1)
+                      }
+                      className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 flex items-center justify-center font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="font-bold">
-                  ₹{(Number(item.product.price) * item.quantity).toLocaleString()}
+              <div className="flex flex-col items-end gap-2">
+                <span className="font-bold text-lg">
+                  ₹
+                  {(
+                    Number(item.product.price) * item.quantity
+                  ).toLocaleString()}
                 </span>
                 <button
                   onClick={() => removeItem(item.product.id)}
@@ -115,7 +161,9 @@ export default function CartPage() {
             </div>
           ))}
           <div className="flex justify-between items-center pt-6">
-            <p className="text-xl font-bold">Total: ₹{total.toLocaleString()}</p>
+            <p className="text-xl font-bold">
+              Total: ₹{total.toLocaleString()}
+            </p>
             <Link href="/checkout">
               <Button>Proceed to Checkout</Button>
             </Link>

@@ -19,6 +19,12 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role === "ADMIN") {
+    return NextResponse.json(
+      { error: "Admins cannot purchase" },
+      { status: 403 },
+    );
+  }
   const { productId, quantity = 1 } = await request.json();
   if (!productId) {
     return NextResponse.json({ error: "Product ID required" }, { status: 400 });
@@ -42,6 +48,33 @@ export async function POST(request: Request) {
       },
     });
   }
+  return NextResponse.json({ success: true });
+}
+
+export async function PUT(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role === "ADMIN") {
+    return NextResponse.json(
+      { error: "Admins cannot purchase" },
+      { status: 403 },
+    );
+  }
+  const { productId, quantity } = await request.json();
+  if (!productId || typeof quantity !== "number") {
+    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+  }
+
+  await prisma.cartItem.updateMany({
+    where: {
+      userId: session.user.id,
+      productId,
+    },
+    data: { quantity },
+  });
+
   return NextResponse.json({ success: true });
 }
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { CartProvider } from "@/components/providers/CartProvider";
 import { LayoutSwitcher } from "@/components/layout/LayoutSwitcher";
 
 const dmSans = DM_Sans({
@@ -34,7 +35,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <SessionProvider>
-          <LayoutSwitcher>{children}</LayoutSwitcher>
+          <CartProvider>
+            <LayoutSwitcher>{children}</LayoutSwitcher>
+          </CartProvider>
         </SessionProvider>
       </body>
     </html>

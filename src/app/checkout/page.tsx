@@ -32,16 +32,20 @@ export default function CheckoutPage() {
       return;
     }
     if (status === "authenticated") {
+      if (session?.user?.role === "ADMIN") {
+        router.push("/admin");
+        return;
+      }
       fetch("/api/cart")
         .then((res) => res.json())
         .then((data) => setItems(data.items || []))
         .finally(() => setLoading(false));
     }
-  }, [status, router]);
+  }, [status, router, session]);
 
   const total = items.reduce(
     (sum, i) => sum + Number(i.product.price) * i.quantity,
-    0
+    0,
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -94,7 +98,9 @@ export default function CheckoutPage() {
               label="Address"
               required
               value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, address: e.target.value }))
+              }
               placeholder="Street address"
             />
             <div className="grid grid-cols-2 gap-4">
@@ -102,13 +108,17 @@ export default function CheckoutPage() {
                 label="City"
                 required
                 value={form.city}
-                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, city: e.target.value }))
+                }
               />
               <Input
                 label="State"
                 required
                 value={form.state}
-                onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, state: e.target.value }))
+                }
               />
             </div>
             <Input
@@ -122,7 +132,9 @@ export default function CheckoutPage() {
               required
               type="tel"
               value={form.phone}
-              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, phone: e.target.value }))
+              }
             />
           </div>
         </div>
@@ -135,12 +147,21 @@ export default function CheckoutPage() {
                   <span>
                     {i.product.name} × {i.quantity}
                   </span>
-                  <span>₹{(Number(i.product.price) * i.quantity).toLocaleString()}</span>
+                  <span>
+                    ₹{(Number(i.product.price) * i.quantity).toLocaleString()}
+                  </span>
                 </li>
               ))}
             </ul>
-            <p className="text-xl font-bold border-t pt-4">Total: ₹{total.toLocaleString()}</p>
-            <Button type="submit" fullWidth className="mt-6" isLoading={submitting}>
+            <p className="text-xl font-bold border-t pt-4">
+              Total: ₹{total.toLocaleString()}
+            </p>
+            <Button
+              type="submit"
+              fullWidth
+              className="mt-6"
+              isLoading={submitting}
+            >
               Place Order
             </Button>
           </div>

@@ -20,38 +20,47 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (session.user.role === "ADMIN") {
+    return NextResponse.json(
+      { error: "Admins cannot purchase" },
+      { status: 403 },
+    );
+  }
   const { shippingAddress, items } = await request.json();
   if (!shippingAddress || !items?.length) {
     return NextResponse.json(
       { error: "Shipping address and items required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const total = items.reduce(
-    (sum: number, i: { quantity: number; price: string }) =>
-      sum + i.quantity * Number(i.price),
-    0
-  );
-
+  // Fetch products to get current price and details
+  const productIds = items.map((i: { productId: string }) => i.productId);
   const products = await prisma.product.findMany({
-    where: { id: { in: items.map((i: { productId: string }) => i.productId) } },
-    select: { id: true, name: true, image: true },
+    where: { id: { in: productIds } },
   });
-  const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
 
-  const orderItemsData = items.map(
-    (i: { productId: string; quantity: number; price: string; name: string }) => {
-      const p = productMap[i.productId];
-      return {
-        productId: i.productId,
-        quantity: i.quantity,
-        price: i.price,
-        name: i.name,
-        image: p?.image ?? null,
-      };
-    }
-  );
+  const productMap = new Map(products.map((p) => [p.id, p]));
+  let total = 0;
+  const orderItemsData = [];
+
+  for (const item of items) {
+    const product = productMap.get(item.productId);
+    if (!product) continue;
+
+    // Check stock if needed (optional implementation step)
+
+    const price = Number(product.price);
+    total += price * item.quantity;
+
+    orderItemsData.push({
+      productId: product.id,
+      quantity: item.quantity,
+      price: product.price, // Use DB price
+      name: product.name, // Use DB name
+      image: product.image, // Use DB image
+    });
+  }
 
   const order = await prisma.order.create({
     data: {

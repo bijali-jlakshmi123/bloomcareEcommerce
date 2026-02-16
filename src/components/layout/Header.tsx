@@ -14,9 +14,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { useCart } from "@/components/providers/CartProvider";
 
 export function Header() {
   const { data: session, status } = useSession();
+  const { count } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
 
@@ -58,7 +60,7 @@ export function Header() {
             >
               <ShoppingCart className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                0
+                {count > 0 ? count : 0}
               </span>
             </Link>
             <Link
@@ -141,7 +143,11 @@ export function Header() {
               className="md:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
