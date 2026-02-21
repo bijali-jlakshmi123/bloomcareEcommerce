@@ -1,4 +1,4 @@
-# BloomCare – Menstruation Care eCommerce
+# BloomCare – 
 
 A full-stack eCommerce platform for menstrual care products built with **Next.js**, **PostgreSQL**, and **Prisma**.
 
